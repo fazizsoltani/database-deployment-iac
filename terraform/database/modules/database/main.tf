@@ -146,24 +146,6 @@ resource "helm_release" "verticadatabase" {
       endpoint: "https://s3.${var.aws_region}.amazonaws.com"
       s3ServerSideEncryption: SSE-S3
       region: ${var.aws_region}
-    subclusters:
-      - name: primary
-        size: 3
-        serviceType: LoadBalancer
-        serviceAnnotations:
-              service.beta.kubernetes.io/aws-load-balancer-type: external
-              service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-              service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-        affinity:
-          podAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/name
-                      operator: In
-                      values:
-                        - vertica
-                topologyKey: topology.kubernetes.io/zone
     EOF  
   ]
 }

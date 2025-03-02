@@ -72,3 +72,7 @@ module "aws_lb_controller" {
   eks_cluster_identity_oidc_issuer = module.eks.eks_cluster_identity_oidc_issuer
 }
 
+module "vertica_operator" {
+  depends_on = [module.eks]
+  source     = "./modules/vertica_operator"
+}

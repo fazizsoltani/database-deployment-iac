@@ -1,0 +1,8 @@
+clusterName: ${cluster_name}
+
+serviceAccount:
+  annotations: ${service_account_annotations}
+  name: ${service_account_name}
+
+region: ${region}
+vpcId: ${vpc_id}

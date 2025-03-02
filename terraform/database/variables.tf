@@ -48,3 +48,9 @@ variable "eks_tags" {
   description = "A map of tags to assign to the EKS cluster resources."
   type        = map(string)
 }
+
+variable "database_super_pass" {
+  description = "The superuser password for the database."
+  type        = string
+  sensitive   = true
+}

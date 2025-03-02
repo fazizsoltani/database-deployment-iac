@@ -1,0 +1,32 @@
+apiVersion: vertica.com/v1 
+kind: VerticaDB 
+metadata: 
+  name: {{ include "database.fullname" . }}
+  labels:
+    {{- include "database.labels" . | nindent 4 }}
+spec: 
+  local:
+    storageClass: {{ .Values.local.storageClass }}
+    requestSize: {{ .Values.local.requestSize }}
+  serviceAccountName: {{ .Values.serviceAccountName }}
+  passwordSecret: {{ .Values.passwordSecret }}
+  image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+  imagePullPolicy: {{ .Values.pullPolicy }}
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
+  communal: 
+    path: {{ .Values.communal.path }}
+    {{- if not .Values.communal.endpoint }}
+    endpoint: {{ .Values.communal.endpoint }}
+    {{- end }}
+    {{- if not .Values.communal.s3ServerSideEncryption }}
+    s3ServerSideEncryption: {{ .Values.communal.s3ServerSideEncryption }}
+    {{- end }}
+    {{- if not .Values.communal.region }}
+    region: {{ .Values.communal.region }}
+    {{- end }}
+  dbName: {{ .Values.dbName }}
+  subclusters: 
+    {{- toYaml .Values.subclusters | nindent 4 }}

@@ -76,3 +76,13 @@ module "vertica_operator" {
   depends_on = [module.eks]
   source     = "./modules/vertica_operator"
 }
+
+module "database" {
+  depends_on                       = [module.eks, module.vertica_operator]
+  source                           = "./modules/database"
+  eks_cluster_identity_oidc_issuer = module.eks.eks_cluster_identity_oidc_issuer
+  account_id                       = data.aws_caller_identity.current.account_id
+  aws_region                       = var.aws_region
+  vpc_id                           = module.vpc.vpc_id
+  database_super_pass              = var.database_super_pass
+}

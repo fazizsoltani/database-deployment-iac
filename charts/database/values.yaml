@@ -1,0 +1,49 @@
+
+image:
+  repository: opentext/vertica-k8s
+  pullPolicy: IfNotPresent
+  tag: ""
+
+local:
+  storageClass: gp2
+  requestSize: 500Gi
+
+passwordSecret: ""
+
+serviceAccountName: ""
+
+annotations: {}
+
+communal:
+  path: "s3://test-vertica-s3-bucket"
+  endpoint: ""
+  s3ServerSideEncryption: ""
+  region: ""
+
+# subclusters: {}
+subclusters:
+  - name: primary
+    size: 3
+    serviceType: LoadBalancer
+    serviceAnnotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: external
+          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - vertica
+            topologyKey: topology.kubernetes.io/zone
+
+dbName: "vertdb"
+
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""

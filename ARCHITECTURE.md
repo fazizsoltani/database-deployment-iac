@@ -168,9 +168,22 @@ aws configure
 ```
 
 ### Terraform Deployment
+
+Before deploying the main Terraform configuration, you need to set up an S3 bucket for the Terraform backend:
+
+```bash
+cd /terraform/backend
+terraform init
+terraform plan -out=tf.plan
+terraform apply tf.plan
+```
+
+This will create an S3 bucket to be used as a backend for storing Terraform state files.
+
 Then run terraform command to provision your infrastructure.
 
 ```bash
+cd ../database
 terraform init
 terraform plan -var-file=dev.tfvars --output=tf.plan
 terraform apply tf.plan

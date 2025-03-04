@@ -13,7 +13,7 @@ locals {
   }
 }
 
-resource "helm_release" "aws-load-balancer-controller" {
+resource "helm_release" "aws_load_balancer_controller" {
   name       = var.aws_lbc_release_name
   chart      = var.aws_lbc_chart_name
   repository = var.aws_lbc_chart_repository

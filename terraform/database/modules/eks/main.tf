@@ -89,5 +89,5 @@ locals {
   }
 
   # Merged user provided and default Tags
-  merged_tags = merge(local.default_tags, var.eks_tags)
+  merged_tags = merge(local.default_tags, var.resource_tags)
 }

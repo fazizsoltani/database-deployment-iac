@@ -1,42 +1,55 @@
-apiVersion: batch/v1
-kind: Job
+{{- if .Values.dataChannelEncryption }}
+apiVersion: vertica.com/v1beta1
+kind: EventTrigger
 metadata:
   name: "{{ include "database.fullname" . }}-tls-config"
 spec:
+  references:
+  - object:
+      apiVersion: vertica.com/v1beta1
+      kind: VerticaDB
+      name: "{{ .Release.Name }}"
+  matches:
+  - condition:
+      type: DBInitialized
+      status: "True"
   template:
+    metadata:
+      generateName: "{{ include "database.fullname" . }}-tls-config-"
     spec:
-      restartPolicy: Never
-      containers:
-        - name: configure-tls
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          env:
-            - name: DBpassword
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.passwordSecret }}
-                  key: password
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              echo "Waiting for Vertica to start..."
-              until /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "SELECT 1;" > /dev/null 2>&1; do
-                echo "Vertica is not ready yet, waiting..."
-                sleep 5
-              done
-              echo "Vertica is now running. Configuring Internode TLS..."
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: configure-tls
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              env:
+                - name: DBpassword
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.passwordSecret }}
+                      key: password
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  echo "Waiting for Vertica to start..."
 
-              # Check if Data Channel TLS is already enabled
-              if /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "SELECT SECURITY_CONFIG_CHECK('NETWORK');" | grep -q "TLS Configuration 'data_channel' TLSMODE is VERIFY_CA"; then
-                echo "Internode TLS is already enabled. Skipping configuration."
-              else
-                echo "Configuring Internode TLS..."
+                  until /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "SELECT 1;" > /dev/null 2>&1; do
+                    echo "Vertica is not ready yet, waiting..."
+                    sleep 5
+                  done
 
-                echo "Vertica is now running. Configuring Internode TLS..."
-                /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "CREATE KEY SSCA_key TYPE 'RSA' LENGTH 2048;"
-                /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "CREATE CA CERTIFICATE SSCA_cert SUBJECT '/C=US/ST=Massachusetts/L=Cambridge/O=OpenText/OU=Vertica/CN=Vertica Root CA' VALID FOR 3650 EXTENSIONS 'nsComment' = 'Self-signed root CA cert' KEY SSCA_key;"
-                /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "CREATE KEY internode_key TYPE 'RSA' LENGTH 2048;"
-                /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "CREATE CERTIFICATE internode_cert SUBJECT '/C=US/ST=Massachusetts/L=Cambridge/O=OpenText/OU=Vertica/CN=data channel' SIGNED BY SSCA_cert EXTENSIONS 'nsComment' = 'Vertica internode cert', 'extendedKeyUsage' = 'serverAuth, clientAuth' KEY internode_key;"
-                /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U dbadmin -w $DBpassword -c "ALTER TLS CONFIGURATION data_channel CERTIFICATE internode_cert TLSMODE 'VERIFY_CA';"
-                echo "Internode TLS Configuration Complete."
-              fi    
-  backoffLimit: 3
+                  echo "Vertica is now running. Configuring Internode TLS..."
+
+                  if /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "SELECT SECURITY_CONFIG_CHECK('NETWORK');" | grep -q "TLS Configuration 'data_channel' TLSMODE is VERIFY_CA"; then
+                    echo "Internode TLS is already enabled. Skipping configuration."
+                  else
+                    echo "Configuring Internode TLS..."
+                    /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "CREATE KEY SSCA_key TYPE 'RSA' LENGTH 2048;"
+                    /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "CREATE CA CERTIFICATE SSCA_cert SUBJECT '/C=US/ST=Massachusetts/L=Cambridge/O=OpenText/OU=Vertica/CN=Vertica Root CA' VALID FOR 3650 EXTENSIONS 'nsComment' = 'Self-signed root CA cert' KEY SSCA_key;"
+                    /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "CREATE KEY internode_key TYPE 'RSA' LENGTH 2048;"
+                    /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "CREATE CERTIFICATE internode_cert SUBJECT '/C=US/ST=Massachusetts/L=Cambridge/O=OpenText/OU=Vertica/CN=data channel' SIGNED BY SSCA_cert EXTENSIONS 'nsComment' = 'Vertica internode cert', 'extendedKeyUsage' = 'serverAuth, clientAuth' KEY internode_key;"
+                    /opt/vertica/bin/vsql -h {{ .Release.Name }}-primary -U {{ .Values.superUsername }} -w $DBpassword -c "ALTER TLS CONFIGURATION data_channel CERTIFICATE internode_cert TLSMODE 'VERIFY_CA';"
+                    echo "Internode TLS Configuration Complete."
+                  fi
+{{- end }}

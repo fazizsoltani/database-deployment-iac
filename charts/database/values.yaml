@@ -15,35 +15,27 @@ serviceAccountName: ""
 annotations: {}
 
 communal:
-  path: "s3://test-vertica-s3-bucket"
+  path: ""
   endpoint: ""
   s3ServerSideEncryption: ""
   region: ""
 
-# subclusters: {}
+# If your Kubernetes cluster is in the cloud or on a managed service, each Vertica node must operate in the same availability zone.
+# https://docs.vertica.com/25.1.x/en/containerized/configuring-communal-storage/
 subclusters:
   - name: primary
     size: 3
     serviceType: LoadBalancer
-    serviceAnnotations:
-          service.beta.kubernetes.io/aws-load-balancer-type: external
-          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    affinity:
-      podAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                    - vertica
-            topologyKey: topology.kubernetes.io/zone
+    loadBalancerScheme: internet-facing
 
 dbName: "vertdb"
-
+superUsername: "dbadmin"
 
 imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
+
+dataChannelEncryption: true
+
+annotations: {}

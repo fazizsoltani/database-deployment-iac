@@ -18,6 +18,11 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "database_bucket_name" {
+  description = "The s3 bucket name which is used by vertica"
+  type        = string
+}
+
 variable "database_namespace" {
   description = "The Kubernetes namespace where the database resources will be deployed."
   type        = string
@@ -46,4 +51,15 @@ variable "resource_tags" {
   description = "A map of tags to assign to the EKS cluster resources."
   type        = map(string)
   default     = {}
+}
+
+variable "enable_database_installation" {
+  description = "enable database installation via helmchart in terraform"
+  type        = bool
+  default     = false
+}
+
+variable "database_super_username" {
+  description = "The name of databse super username"
+  type        = string
 }

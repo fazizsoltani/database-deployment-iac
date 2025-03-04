@@ -23,7 +23,7 @@ variable "eks_instance_types" {
   type        = list(string)
 }
 
-variable "eks_tags" {
+variable "resource_tags" {
   description = "A map of tags to assign to the EKS cluster resources."
   type        = map(string)
 }

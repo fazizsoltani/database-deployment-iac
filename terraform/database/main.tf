@@ -48,12 +48,13 @@ module "vpc" {
 }
 
 module "eks" {
+  depends_on         = [module.vpc]
   source             = "./modules/eks"
   eks_cluster_name   = var.eks_cluster_name
   vpc_id             = module.vpc.vpc_id
   private_subnets    = module.vpc.vpc_private_subnets
   eks_node_count     = var.eks_node_count
-  eks_tags           = var.eks_tags
+  resource_tags      = var.resource_tags
   eks_instance_types = var.eks_instance_types
   eks_version        = var.eks_version
   eks_disk_size      = var.eks_disk_size
@@ -65,6 +66,7 @@ module "metrics_server" {
 }
 
 module "aws_lb_controller" {
+  depends_on                       = [module.eks]
   source                           = "./modules/aws_lb_controller"
   aws_region                       = var.aws_region
   eks_cluster_name                 = var.eks_cluster_name
@@ -85,4 +87,8 @@ module "database" {
   aws_region                       = var.aws_region
   vpc_id                           = module.vpc.vpc_id
   database_super_pass              = var.database_super_pass
+  database_bucket_name             = var.database_bucket_name
+  enable_database_installation     = var.enable_database_installation
+  database_namespace               = var.database_namespace
+  database_super_username          = var.database_super_username
 }

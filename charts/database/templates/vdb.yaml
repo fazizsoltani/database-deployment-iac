@@ -1,10 +1,12 @@
-apiVersion: vertica.com/v1 
-kind: VerticaDB 
-metadata: 
+apiVersion: vertica.com/v1
+kind: VerticaDB
+metadata:
   name: {{ include "database.fullname" . }}
   labels:
     {{- include "database.labels" . | nindent 4 }}
-spec: 
+  annotations:
+    {{- include "database.annotations" . | nindent 4 }}
+spec:
   local:
     storageClass: {{ .Values.local.storageClass }}
     requestSize: {{ .Values.local.requestSize }}
@@ -16,17 +18,37 @@ spec:
   imagePullSecrets:
     {{- toYaml . | nindent 8 }}
   {{- end }}
-  communal: 
+  communal:
     path: {{ .Values.communal.path }}
-    {{- if not .Values.communal.endpoint }}
+    {{- if .Values.communal.endpoint }}
     endpoint: {{ .Values.communal.endpoint }}
     {{- end }}
-    {{- if not .Values.communal.s3ServerSideEncryption }}
+    {{- if .Values.communal.s3ServerSideEncryption }}
     s3ServerSideEncryption: {{ .Values.communal.s3ServerSideEncryption }}
     {{- end }}
-    {{- if not .Values.communal.region }}
+    {{- if .Values.communal.region }}
     region: {{ .Values.communal.region }}
     {{- end }}
   dbName: {{ .Values.dbName }}
-  subclusters: 
-    {{- toYaml .Values.subclusters | nindent 4 }}
+  subclusters:
+    {{- range .Values.subclusters }}
+    - name: {{ .name }}
+      size: {{ .size }}
+      serviceType: {{ .serviceType }}
+      {{- if eq .serviceType "LoadBalancer" }}
+      serviceAnnotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: external
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+        service.beta.kubernetes.io/aws-load-balancer-scheme: {{ .loadBalancerScheme | default "internet-facing" }}
+      {{- end }}
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - vertica
+              topologyKey: topology.kubernetes.io/zone
+    {{- end }}
